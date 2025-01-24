@@ -18,7 +18,7 @@ const fetchScrapedData = async () => {
   error.value = null;
   try {
     const fullUrl = `https://${userUrl.value}`;
-    const response = await axios.get(`http://localhost:5000/scrape?url=${encodeURIComponent(fullUrl)}`);
+    const response = await axios.get(`https://webscrapper-1ab5.onrender.com/scrape?url=${encodeURIComponent(fullUrl)}`);
     scrapedData.value = response.data.data;
   } catch (err) {
     console.error("Error fetching data:", err);
