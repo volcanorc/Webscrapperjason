@@ -5,7 +5,7 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const cors = require("cors");
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 puppeteer.use(StealthPlugin());
 app.use(cors());
 app.get("/scrape", async (req, res) => {
@@ -30,7 +30,10 @@ app.get("/scrape", async (req, res) => {
         } catch (axiosError) {
             console.log("Axios failed, switching to Puppeteer...");
         }
-        const browser = await puppeteer.launch({ headless: "new" });
+        const browser = await puppeteer.launch({
+            headless: "new",
+            args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        });
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
         await page.waitForSelector("h1, h2, h3, h4, h5, h6");
@@ -47,6 +50,6 @@ app.get("/scrape", async (req, res) => {
         res.status(500).json({ success: false, message: "Scraping failed" });
     }
 });
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
 });
