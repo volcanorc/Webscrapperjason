@@ -5,7 +5,7 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const cors = require("cors");
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 puppeteer.use(StealthPlugin());
 app.use(cors());
 app.get("/scrape", async (req, res) => {
