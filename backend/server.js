@@ -31,7 +31,7 @@ app.get("/scrape", async (req, res) => {
             console.log("Axios failed, switching to Puppeteer...");
         }
         const browser = await puppeteer.launch({
-            headless: "new",
+            headless: false,
             args: ["--no-sandbox", "--disable-setuid-sandbox"],
         });
         const page = await browser.newPage();
