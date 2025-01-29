@@ -37,6 +37,7 @@ app.get("/scrape", async (req, res) => {
 
         // Fallback to Puppeteer if Axios fails
         const browser = await puppeteer.launch({
+
             headless: "new", // Use the new headless mode
             args: [
                 "--no-sandbox", // Required for Render
@@ -46,7 +47,7 @@ app.get("/scrape", async (req, res) => {
                 "--disable-gpu", // Disable GPU hardware acceleration
                 "--single-process", // Run in a single process
             ],
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // Use bundled Chromium
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // Use bundled Chromium           
         });
 
         const page = await browser.newPage();
