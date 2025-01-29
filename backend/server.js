@@ -7,9 +7,13 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Use the Stealth plugin for Puppeteer
 puppeteer.use(StealthPlugin());
+
+// Enable CORS for all routes
 app.use(cors());
 
+// Route to handle scraping requests
 app.get("/scrape", async (req, res) => {
     try {
         const url = req.query.url;
@@ -37,7 +41,6 @@ app.get("/scrape", async (req, res) => {
 
         // Fallback to Puppeteer if Axios fails
         const browser = await puppeteer.launch({
-
             headless: "new", // Use the new headless mode
             args: [
                 "--no-sandbox", // Required for Render
@@ -47,7 +50,7 @@ app.get("/scrape", async (req, res) => {
                 "--disable-gpu", // Disable GPU hardware acceleration
                 "--single-process", // Run in a single process
             ],
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // Use bundled Chromium           
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // Use bundled Chromium
         });
 
         const page = await browser.newPage();
@@ -72,6 +75,7 @@ app.get("/scrape", async (req, res) => {
     }
 });
 
+// Start the server
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
 });
