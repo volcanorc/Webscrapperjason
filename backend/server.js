@@ -8,7 +8,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 puppeteer.use(StealthPlugin());
-app.use(cors());
+app.use(cors({
+    origin: "*",  // You can specify the allowed origins here instead of "*"
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"], // Adjust according to your requirements
+}));
 
 app.get("/scrape", async (req, res) => {
     try {
