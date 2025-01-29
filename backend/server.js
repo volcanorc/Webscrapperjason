@@ -7,13 +7,9 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Use the Stealth plugin for Puppeteer
 puppeteer.use(StealthPlugin());
-
-// Enable CORS for all routes
 app.use(cors());
 
-// Route to handle scraping requests
 app.get("/scrape", async (req, res) => {
     try {
         const url = req.query.url;
@@ -21,7 +17,6 @@ app.get("/scrape", async (req, res) => {
             return res.status(400).json({ success: false, message: "URL is required" });
         }
 
-        // Try scraping with Axios and Cheerio first
         try {
             const response = await axios.get(url, { timeout: 10000 });
             const $ = cheerio.load(response.data);
@@ -39,24 +34,22 @@ app.get("/scrape", async (req, res) => {
             console.log("Axios failed, switching to Puppeteer...");
         }
 
-        // Fallback to Puppeteer if Axios fails
         const browser = await puppeteer.launch({
-            headless: "new", // Use the new headless mode
+            headless: "new", 
             args: [
-                "--no-sandbox", // Required for Render
-                "--disable-setuid-sandbox", // Required for Render
-                "--disable-dev-shm-usage", // Helps avoid memory issues
+                "--no-sandbox", 
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage", 
                 "--disable-accelerated-2d-canvas",
-                "--disable-gpu", // Disable GPU hardware acceleration
-                "--single-process", // Run in a single process
+                "--disable-gpu", 
+                "--single-process", 
             ],
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // Use bundled Chromium
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // Use bundled Chromium           
         });
 
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
 
-        // Wait for at least one heading element to be present
         await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 });
 
         const scrapedData = await page.evaluate(() => {
@@ -75,7 +68,6 @@ app.get("/scrape", async (req, res) => {
     }
 });
 
-// Start the server
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
 });
