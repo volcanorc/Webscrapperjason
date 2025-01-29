@@ -1,25 +1,51 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import axios from "axios";
-interface ScrapedData {
+
+interface HeadingData {
   tag: string;
   text: string;
 }
-const scrapedData = ref<ScrapedData[]>([]);
+
+interface ImageData {
+  src: string;
+  alt: string;
+}
+
+interface ScrapedData {
+  headings: HeadingData[];
+  images: ImageData[];
+}
+
+const scrapedData = ref<ScrapedData>({ headings: [], images: [] });
 const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 const userUrl = ref<string>("");
+
 const fetchScrapedData = async () => {
   if (!userUrl.value) {
     error.value = "Please provide a domain (e.g., example.com) to scrape.";
     return;
   }
+
   loading.value = true;
   error.value = null;
+  scrapedData.value = { headings: [], images: [] }; // Reset scraped data
+
   try {
     const fullUrl = `https://${userUrl.value}`;
-    const response = await axios.get(`https://webscrapper-1ab5.onrender.com/scrape?url=${encodeURIComponent(fullUrl)}`);
-    scrapedData.value = response.data.data;
+    const response = await axios.get(
+      `https://webscrapper-1ab5.onrender.com/scrape?url=${encodeURIComponent(fullUrl)}`
+    );
+
+    if (response.data.success) {
+      scrapedData.value = {
+        headings: response.data.headings || [],
+        images: response.data.images || [],
+      };
+    } else {
+      error.value = "No data found. Please try another URL.";
+    }
   } catch (err) {
     console.error("Error fetching data:", err);
     error.value = "Failed to load scraped data.";
@@ -28,17 +54,24 @@ const fetchScrapedData = async () => {
   }
 };
 </script>
+
 <template>
   <div class="container mx-auto p-6 text-center">
-    <h1 class="text-4xl font-bold text-blue-700 mb-6">Scrape Website Headers</h1>
-    <p class="text-lg text-gray-600 mb-4">Enter the domain of a website to scrape its header tags.</p>
+    <h1 class="text-4xl font-bold text-blue-700 mb-6">Scrape Website Headers and Images</h1>
+    <p class="text-lg text-gray-600 mb-4">Enter the domain of a website to scrape its header tags and images.</p>
     <div class="mb-6 flex justify-center items-center space-x-4">
-      <input v-model="userUrl" type="text"
+      <input
+        v-model="userUrl"
+        type="text"
         class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        placeholder="Enter domain (e.g., example.com)" aria-label="Enter website domain" />
-      <button @click="fetchScrapedData"
+        placeholder="Enter domain (e.g., example.com)"
+        aria-label="Enter website domain"
+      />
+      <button
+        @click="fetchScrapedData"
         class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label="Scrape Website">
+        aria-label="Scrape Website"
+      >
         Scrape
       </button>
     </div>
@@ -46,15 +79,44 @@ const fetchScrapedData = async () => {
     <div v-else-if="error" class="text-lg text-red-500 mb-4">
       <span>{{ error }}</span>
     </div>
-    <ul v-else-if="scrapedData.length > 0" class="bg-white shadow-md rounded-lg p-4 space-y-4">
-      <li v-for="(item, index) in scrapedData" :key="index" class="p-3 border-b last:border-none flex justify-between">
-        <span class="font-semibold text-gray-800">{{ item.tag }}</span>
-        <span class="ml-4 text-gray-600">{{ item.text }}</span>
-      </li>
-    </ul>
-    <p v-else class="text-gray-500">No data found. Please try another URL.</p>
+    <div v-else>
+      <!-- Display Headings -->
+      <div v-if="scrapedData.headings.length > 0" class="bg-white shadow-md rounded-lg p-4 mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Headings</h2>
+        <ul class="space-y-4">
+          <li
+            v-for="(item, index) in scrapedData.headings"
+            :key="`heading-${index}`"
+            class="p-3 border-b last:border-none flex justify-between"
+          >
+            <span class="font-semibold text-gray-800">{{ item.tag }}</span>
+            <span class="ml-4 text-gray-600">{{ item.text }}</span>
+          </li>
+        </ul>
+      </div>
+      <p v-else class="text-gray-500 mb-6">No headings found.</p>
+
+      <!-- Display Images -->
+      <div v-if="scrapedData.images.length > 0" class="bg-white shadow-md rounded-lg p-4">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Images</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            v-for="(item, index) in scrapedData.images"
+            :key="`image-${index}`"
+            class="border rounded-lg overflow-hidden"
+          >
+            <img :src="item.src" :alt="item.alt" class="w-full h-auto" />
+            <div v-if="item.alt" class="p-2 bg-gray-100 text-sm text-gray-600">
+              {{ item.alt }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <p v-else class="text-gray-500">No images found.</p>
+    </div>
   </div>
 </template>
+
 <style scoped>
 .container {
   max-width: 900px;
@@ -68,5 +130,10 @@ button {
 
 input {
   max-width: 400px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 </style>
