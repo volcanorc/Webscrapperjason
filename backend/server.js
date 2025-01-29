@@ -5,7 +5,7 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const cors = require("cors");
 const app = express();
-const PORT = process.env.PORT || 3000; // Default port if not provided
+const PORT = process.env.PORT || 3000;
 
 puppeteer.use(StealthPlugin());
 app.use(cors());
@@ -38,7 +38,15 @@ app.get("/scrape", async (req, res) => {
         // Fallback to Puppeteer if Axios fails
         const browser = await puppeteer.launch({
             headless: "new", // Use the new headless mode
-            args: [], // No need for sandbox args unless running in restricted environments
+            args: [
+                "--no-sandbox", // Required for Render
+                "--disable-setuid-sandbox", // Required for Render
+                "--disable-dev-shm-usage", // Helps avoid memory issues
+                "--disable-accelerated-2d-canvas",
+                "--disable-gpu", // Disable GPU hardware acceleration
+                "--single-process", // Run in a single process
+            ],
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // Use bundled Chromium
         });
 
         const page = await browser.newPage();
