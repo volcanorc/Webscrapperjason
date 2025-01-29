@@ -25,27 +25,15 @@ app.get("/scrape", async (req, res) => {
         try {
             const response = await axios.get(url, { timeout: 10000 });
             const $ = cheerio.load(response.data);
-            let headings = [];
-            let images = [];
-
-            // Scrape headings
+            let data = [];
             $("h1, h2, h3, h4, h5, h6").each((_, element) => {
-                headings.push({
+                data.push({
                     tag: $(element).prop("tagName"),
                     text: $(element).text().trim(),
                 });
             });
-
-            // Scrape images
-            $("img").each((_, element) => {
-                images.push({
-                    src: $(element).attr("src"),
-                    alt: $(element).attr("alt") || "",
-                });
-            });
-
-            if (headings.length > 0 || images.length > 0) {
-                return res.json({ success: true, method: "cheerio", headings, images });
+            if (data.length > 0) {
+                return res.json({ success: true, method: "cheerio", data });
             }
         } catch (axiosError) {
             console.log("Axios failed, switching to Puppeteer...");
@@ -53,32 +41,27 @@ app.get("/scrape", async (req, res) => {
 
         // Fallback to Puppeteer if Axios fails
         const browser = await puppeteer.launch({
+
             headless: "new", // Use the new headless mode
-            args: [],
+            args: [
+            ],
         });
 
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
 
         // Wait for at least one heading element to be present
-        await page.waitForSelector("h1, h2, h3, h4, h5, h6, img", { timeout: 10000 });
+        await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 });
 
         const scrapedData = await page.evaluate(() => {
-            const headings = [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((element) => ({
+            return [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((element) => ({
                 tag: element.tagName,
                 text: element.innerText.trim(),
             }));
-
-            const images = [...document.querySelectorAll("img")].map((element) => ({
-                src: element.src,
-                alt: element.alt || "",
-            }));
-
-            return { headings, images };
         });
 
         await browser.close();
-        res.json({ success: true, method: "puppeteer", ...scrapedData });
+        res.json({ success: true, method: "puppeteer", data: scrapedData });
 
     } catch (error) {
         console.error("Scraping Error:", error);
