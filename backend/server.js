@@ -46,8 +46,8 @@ app.get("/scrape", async (req, res) => {
                 "--disable-accelerated-2d-canvas",
                 "--disable-gpu", // Disable GPU hardware acceleration
                 "--single-process", // Run in a single process
+                 "--disable-web-security",
             ],
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // Use bundled Chromium           
         });
 
         const page = await browser.newPage();
