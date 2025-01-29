@@ -8,68 +8,79 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 puppeteer.use(StealthPlugin());
+
+// Enable CORS for all routes
 app.use(cors());
 
+// Handle preflight requests for /scrape
+app.options("/scrape", cors());
+
 app.get("/scrape", async (req, res) => {
-    try {
-        res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Methods", "GET");
-        const url = req.query.url;
-        if (!url) {
-            return res.status(400).json({ success: false, message: "URL is required" });
-        }
+  try {
+    // Set CORS headers manually (optional)
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET");
 
-        try {
-            const response = await axios.get(url, { timeout: 10000 });
-            const $ = cheerio.load(response.data);
-            let data = [];
-            $("h1, h2, h3, h4, h5, h6").each((_, element) => {
-                data.push({
-                    tag: $(element).prop("tagName"),
-                    text: $(element).text().trim(),
-                });
-            });
-            if (data.length > 0) {
-                return res.json({ success: true, method: "cheerio", data });
-            }
-        } catch (axiosError) {
-            console.log("Axios failed, switching to Puppeteer...");
-        }
-
-        const browser = await puppeteer.launch({
-            headless: "new", 
-            args: [
-                "--no-sandbox", 
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage", 
-                "--disable-accelerated-2d-canvas",
-                "--disable-gpu", 
-                "--single-process", 
-            ],
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // Use bundled Chromium           
-        });
-
-        const page = await browser.newPage();
-        await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
-
-        await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 });
-
-        const scrapedData = await page.evaluate(() => {
-            return [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((element) => ({
-                tag: element.tagName,
-                text: element.innerText.trim(),
-            }));
-        });
-
-        await browser.close();
-        res.json({ success: true, method: "puppeteer", data: scrapedData });
-
-    } catch (error) {
-        console.error("Scraping Error:", error);
-        res.status(500).json({ success: false, message: "Scraping failed", error: error.message });
+    const url = req.query.url;
+    if (!url) {
+      return res.status(400).json({ success: false, message: "URL is required" });
     }
+
+    // Try scraping with Axios and Cheerio first
+    try {
+      const response = await axios.get(url, { timeout: 10000 });
+      const $ = cheerio.load(response.data);
+      let data = [];
+      $("h1, h2, h3, h4, h5, h6").each((_, element) => {
+        data.push({
+          tag: $(element).prop("tagName"),
+          text: $(element).text().trim(),
+        });
+      });
+      if (data.length > 0) {
+        return res.json({ success: true, method: "cheerio", data });
+      }
+    } catch (axiosError) {
+      console.log("Axios failed, switching to Puppeteer...");
+    }
+
+    // Fallback to Puppeteer if Axios fails
+    const browser = await puppeteer.launch({
+      headless: "new",
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu",
+        "--single-process",
+      ],
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
+    });
+
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
+
+    // Wait for at least one heading element to be present
+    await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 });
+
+    const scrapedData = await page.evaluate(() => {
+      return [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((element) => ({
+        tag: element.tagName,
+        text: element.innerText.trim(),
+      }));
+    });
+
+    await browser.close();
+    res.json({ success: true, method: "puppeteer", data: scrapedData });
+
+  } catch (error) {
+    console.error("Scraping Error:", error);
+    res.header("Access-Control-Allow-Origin", "*"); // Ensure headers are set in error responses
+    res.status(500).json({ success: false, message: "Scraping failed", error: error.message });
+  }
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
