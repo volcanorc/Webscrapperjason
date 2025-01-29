@@ -40,13 +40,6 @@ app.get("/scrape", async (req, res) => {
 
             headless: "new", // Use the new headless mode
             args: [
-                "--no-sandbox", // Required for Render
-                "--disable-setuid-sandbox", // Required for Render
-                "--disable-dev-shm-usage", // Helps avoid memory issues
-                "--disable-accelerated-2d-canvas",
-                "--disable-gpu", // Disable GPU hardware acceleration
-                "--single-process", // Run in a single process
-                 "--disable-web-security",
             ],
         });
 
