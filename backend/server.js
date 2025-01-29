@@ -12,6 +12,8 @@ app.use(cors());
 
 app.get("/scrape", async (req, res) => {
     try {
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Methods", "GET");
         const url = req.query.url;
         if (!url) {
             return res.status(400).json({ success: false, message: "URL is required" });
