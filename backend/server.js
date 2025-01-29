@@ -6,14 +6,17 @@ const cheerio = require("cheerio");
 const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT;
+
 puppeteer.use(StealthPlugin());
 app.use(cors());
+
 app.get("/scrape", async (req, res) => {
     try {
         const url = req.query.url;
         if (!url) {
             return res.status(400).json({ success: false, message: "URL is required" });
         }
+
         try {
             const response = await axios.get(url, { timeout: 10000 });
             const $ = cheerio.load(response.data);
@@ -30,27 +33,32 @@ app.get("/scrape", async (req, res) => {
         } catch (axiosError) {
             console.log("Axios failed, switching to Puppeteer...");
         }
+
         const browser = await puppeteer.launch({
-            headless: "new",
-            executablePath: '/path/to/Chrome',
-            args: ["--no-sandbox", "--disable-setuid-sandbox"],
+            headless: true, 
+            args: ["--no-sandbox", "--disable-setuid-sandbox"], 
         });
+
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
         await page.waitForSelector("h1, h2, h3, h4, h5, h6");
+
         const scrapedData = await page.evaluate(() => {
             return [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((element) => ({
                 tag: element.tagName,
                 text: element.innerText.trim(),
             }));
         });
+
         await browser.close();
         res.json({ success: true, method: "puppeteer", data: scrapedData });
+
     } catch (error) {
         console.error("Scraping Error:", error);
         res.status(500).json({ success: false, message: "Scraping failed" });
     }
 });
+
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
 });
