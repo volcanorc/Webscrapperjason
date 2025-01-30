@@ -46,7 +46,7 @@ app.get("/scrape", async (req, res) => {
         });
 
   const page = await browser.newPage();
-await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
+await page.goto(url, { waitUntil: "load", timeout: 60000 });
 
 await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 }).catch(() => {
     // If no headings are found within the timeout, we just move forward with images
