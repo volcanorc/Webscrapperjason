@@ -45,41 +45,47 @@ app.get("/scrape", async (req, res) => {
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
 
-        const page = await browser.newPage();
-        await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
+  const page = await browser.newPage();
+await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
 
-        // Wait for at least one heading element to be present
-        await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 });
+await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 }).catch(() => {
+    // If no headings are found within the timeout, we just move forward with images
+    console.log("No headings found, proceeding to scrape images.");
+});
 
-        // Scrape headings
-        const scrapedHeadings = await page.evaluate(() => {
-            return [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((element) => ({
-                tag: element.tagName,
-                text: element.innerText.trim(),
-            }));
-        });
+// Scrape headings
+const scrapedHeadings = await page.evaluate(() => {
+    const headings = [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")];
+    if (headings.length === 0) {
+        return null; // If no headings are found, return null
+    }
+    return headings.map((element) => ({
+        tag: element.tagName,
+        text: element.innerText.trim(),
+    }));
+});
 
-        // Scrape images
-        const scrapedImages = await page.evaluate(() => {
-            const images = [];
-            document.querySelectorAll("img").forEach((img) => {
-                const src = img.src;
-                if (src) {
-                    images.push(src);
-                }
-            });
-            return images;
-        });
+// Scrape images
+const scrapedImages = await page.evaluate(() => {
+    const images = [];
+    document.querySelectorAll("img").forEach((img) => {
+        const src = img.src;
+        if (src) {
+            images.push(src);
+        }
+    });
+    return images;
+});
 
-        await browser.close();
+await browser.close();
 
-        // Send both headings and images in the response
-        res.json({
-            success: true,
-            method: "puppeteer",
-            data: scrapedHeadings,
-            images: scrapedImages,
-        });
+// Send response with headings and images
+res.json({
+    success: true,
+    method: "puppeteer",
+    data: scrapedHeadings, // If no headings are found, it will be null
+    images: scrapedImages,
+});
     } catch (error) {
         console.error("Scraping Error:", error);
         res.status(500).json({ success: false, message: "Scraping failed", error: error.message });
