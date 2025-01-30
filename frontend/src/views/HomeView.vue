@@ -33,11 +33,14 @@ const fetchScrapedData = async () => {
       `https://webscrapper-1ab5.onrender.com/scrape?url=${encodeURIComponent(fullUrl)}`
     );
 
+    console.log(response.data); // Log the entire response to inspect it
+
     if (response.data.success) {
       scrapedData.value = {
-        headings: response.data.data || [], // Headings data
-        images: response.data.images || [], // Image URLs
+        headings: response.data.data || [],
+        images: response.data.images || [],
       };
+      console.log('Scraped Image URLs:', scrapedData.value.images); // Log image URLs
     } else {
       error.value = "No data found. Please try another URL.";
     }
