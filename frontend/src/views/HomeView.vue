@@ -14,7 +14,7 @@ interface ImageData {
 
 interface ScrapedData {
   headings: HeadingData[];
-  images: ImageData[];
+  images: string[];  // Array of image URLs (no alt text in the backend response)
 }
 
 const scrapedData = ref<ScrapedData>({ headings: [], images: [] });
@@ -40,8 +40,8 @@ const fetchScrapedData = async () => {
 
     if (response.data.success) {
       scrapedData.value = {
-        headings: response.data.headings || [],
-        images: response.data.images || [],
+        headings: response.data.data || [], // Updated based on the response structure
+        images: response.data.images || [], // Updated based on the response structure
       };
     } else {
       error.value = "No data found. Please try another URL.";
@@ -101,14 +101,11 @@ const fetchScrapedData = async () => {
         <h2 class="text-2xl font-bold text-gray-800 mb-4">Images</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div
-            v-for="(item, index) in scrapedData.images"
+            v-for="(src, index) in scrapedData.images"
             :key="`image-${index}`"
             class="border rounded-lg overflow-hidden"
           >
-            <img :src="item.src" :alt="item.alt" class="w-full h-auto" />
-            <div v-if="item.alt" class="p-2 bg-gray-100 text-sm text-gray-600">
-              {{ item.alt }}
-            </div>
+            <img :src="src" :alt="'Image ' + index" class="w-full h-auto" />
           </div>
         </div>
       </div>
@@ -116,6 +113,7 @@ const fetchScrapedData = async () => {
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .container {
