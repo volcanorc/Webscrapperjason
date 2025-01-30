@@ -40,30 +40,46 @@ app.get("/scrape", async (req, res) => {
         }
 
       
-        const browser = await puppeteer.launch({
-
+     const browser = await puppeteer.launch({
             headless: "new", // Use the new headless mode
-
-            args: [
-            ],
+            args: [],
         });
 
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
 
-
+        // Wait for at least one heading element to be present
         await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 });
 
-        const scrapedData = await page.evaluate(() => {
+        // Scrape headings
+        const scrapedHeadings = await page.evaluate(() => {
             return [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((element) => ({
                 tag: element.tagName,
                 text: element.innerText.trim(),
             }));
         });
 
-        await browser.close();
-        res.json({ success: true, method: "puppeteer", data: scrapedData });
+        // Scrape images
+        const scrapedImages = await page.evaluate(() => {
+            const images = [];
+            document.querySelectorAll("img").forEach((img) => {
+                const src = img.src;
+                if (src) {
+                    images.push(src);
+                }
+            });
+            return images;
+        });
 
+        await browser.close();
+
+        // Send both headings and images in the response
+        res.json({
+            success: true,
+            method: "puppeteer",
+            data: scrapedHeadings,
+            images: scrapedImages,
+        });
     } catch (error) {
         console.error("Scraping Error:", error);
         res.status(500).json({ success: false, message: "Scraping failed", error: error.message });
