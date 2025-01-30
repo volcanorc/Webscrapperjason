@@ -6,6 +6,7 @@ const cheerio = require("cheerio");
 const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3000;
+const scrapeImages = require("./scrapeImages"); 
 
 puppeteer.use(StealthPlugin());
 app.use(cors({
@@ -60,8 +61,16 @@ app.get("/scrape", async (req, res) => {
             }));
         });
 
+         const images = await scrapeImages(url);
+
         await browser.close();
-        res.json({ success: true, method: "puppeteer", data: scrapedData });
+
+        res.json({
+            success: true,
+            method: "puppeteer",
+            data: scrapedData,
+            images: images,
+        });
 
     } catch (error) {
         console.error("Scraping Error:", error);
