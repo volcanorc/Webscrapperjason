@@ -8,7 +8,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 puppeteer.use(StealthPlugin());
-app.use(cors());
+app.use(cors({
+    origin: "*",  // You can specify the allowed origins here instead of "*"
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 app.get("/scrape", async (req, res) => {
     try {
@@ -35,16 +39,10 @@ app.get("/scrape", async (req, res) => {
         }
 
         const browser = await puppeteer.launch({
+
             headless: "new", 
             args: [
-                "--no-sandbox", 
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage", 
-                "--disable-accelerated-2d-canvas",
-                "--disable-gpu", 
-                "--single-process", 
             ],
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // Use bundled Chromium           
         });
 
         const page = await browser.newPage();
