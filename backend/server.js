@@ -11,7 +11,7 @@ puppeteer.use(StealthPlugin());
 app.use(cors({
     origin: "*",  // You can specify the allowed origins here instead of "*"
     methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"], // Adjust according to your requirements
+    allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
 app.get("/scrape", async (req, res) => {
@@ -21,7 +21,6 @@ app.get("/scrape", async (req, res) => {
             return res.status(400).json({ success: false, message: "URL is required" });
         }
 
-        // Try scraping with Axios and Cheerio first
         try {
             const response = await axios.get(url, { timeout: 10000 });
             const $ = cheerio.load(response.data);
@@ -39,10 +38,9 @@ app.get("/scrape", async (req, res) => {
             console.log("Axios failed, switching to Puppeteer...");
         }
 
-        // Fallback to Puppeteer if Axios fails
         const browser = await puppeteer.launch({
 
-            headless: "new", // Use the new headless mode
+            headless: "new", 
             args: [
             ],
         });
@@ -50,7 +48,6 @@ app.get("/scrape", async (req, res) => {
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
 
-        // Wait for at least one heading element to be present
         await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 });
 
         const scrapedData = await page.evaluate(() => {
@@ -60,9 +57,8 @@ app.get("/scrape", async (req, res) => {
             }));
         });
 
-       await browser.close();
+        await browser.close();
         res.json({ success: true, method: "puppeteer", data: scrapedData });
-       
 
     } catch (error) {
         console.error("Scraping Error:", error);
