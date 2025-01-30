@@ -9,9 +9,9 @@ const PORT = process.env.PORT || 3000;
 
 puppeteer.use(StealthPlugin());
 app.use(cors({
-    origin: "*",  // You can specify the allowed origins here instead of "*"
+    origin: "*", 
     methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization"], 
 }));
 
 app.get("/scrape", async (req, res) => {
@@ -20,6 +20,7 @@ app.get("/scrape", async (req, res) => {
         if (!url) {
             return res.status(400).json({ success: false, message: "URL is required" });
         }
+
 
         try {
             const response = await axios.get(url, { timeout: 10000 });
@@ -35,18 +36,21 @@ app.get("/scrape", async (req, res) => {
                 return res.json({ success: true, method: "cheerio", data });
             }
         } catch (axiosError) {
-            console.log("Axios failed, switching to Puppeteer...");
+            console.log("Axios failed, switching to Puppeteer.");
         }
 
+      
         const browser = await puppeteer.launch({
 
-            headless: "new", 
+            headless: "new", // Use the new headless mode
+
             args: [
             ],
         });
 
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
+
 
         await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 });
 
