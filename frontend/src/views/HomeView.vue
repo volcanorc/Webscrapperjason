@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import axios from "axios";
 
 interface HeadingData {
@@ -7,14 +7,9 @@ interface HeadingData {
   text: string;
 }
 
-interface ImageData {
-  src: string;
-  alt: string;
-}
-
 interface ScrapedData {
   headings: HeadingData[];
-  images: string[];  // Array of image URLs (no alt text in the backend response)
+  images: string[];  // Array of image URLs (only src is provided)
 }
 
 const scrapedData = ref<ScrapedData>({ headings: [], images: [] });
@@ -40,8 +35,8 @@ const fetchScrapedData = async () => {
 
     if (response.data.success) {
       scrapedData.value = {
-        headings: response.data.data || [], // Updated based on the response structure
-        images: response.data.images || [], // Updated based on the response structure
+        headings: response.data.data || [], // Headings data
+        images: response.data.images || [], // Image URLs
       };
     } else {
       error.value = "No data found. Please try another URL.";
@@ -114,7 +109,6 @@ const fetchScrapedData = async () => {
   </div>
 </template>
 
-
 <style scoped>
 .container {
   max-width: 900px;
@@ -135,3 +129,4 @@ img {
   height: auto;
 }
 </style>
+
