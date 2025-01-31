@@ -2,7 +2,7 @@ const express = require("express");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const axios = require("axios");
 const cheerio = require("cheerio");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-extra");
 const cors = require("cors");
 const app = express();
 
