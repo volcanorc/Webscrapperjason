@@ -1,20 +1,9 @@
 const express = require("express");
-const puppeteer = require("puppeteer-extra");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const axios = require("axios");
 const cheerio = require("cheerio");
-const cors = require("cors");
+const puppeteer = require("puppeteer");
+
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-puppeteer.use(StealthPlugin());
-app.use(cors({
-    origin: "*", 
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"], 
-}));
-
-//const imageUrlPattern = /^https:\/\/xcimg\.szwego\.com\/.*\.(jpg|jpeg|png|gif)\?.*/;
 
 app.get("/scrape", async (req, res) => {
     try {
@@ -23,17 +12,18 @@ app.get("/scrape", async (req, res) => {
             return res.status(400).json({ success: false, message: "URL is required" });
         }
 
-
         try {
             const response = await axios.get(url, { timeout: 10000 });
             const $ = cheerio.load(response.data);
             let data = [];
-            $("h1, h2, h3, h4, h5, h6").each((_, element) => {
-                data.push({
-                    tag: $(element).prop("tagName"),
-                    text: $(element).text().trim(),
-                });
+
+            $("img").each((_, element) => {
+                const src = $(element).attr("src");
+                if (src) {
+                    data.push({ src });
+                }
             });
+
             if (data.length > 0) {
                 return res.json({ success: true, method: "cheerio", data });
             }
@@ -41,55 +31,33 @@ app.get("/scrape", async (req, res) => {
             console.log("Axios failed, switching to Puppeteer.");
         }
 
-      
-     const browser = await puppeteer.launch({
+        const browser = await puppeteer.launch({
             headless: "new",
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            args: [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-accelerated-2d-canvas",
+                "--disable-gpu"
+            ],
         });
 
-  const page = await browser.newPage();
-await page.goto(url, { waitUntil: "load", timeout: 60000 });
+        const page = await browser.newPage();
+        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
 
-await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 }).catch(() => {
-    console.log("No headings found, proceeding to scrape images.");
-});
+        const scrapedData = await page.evaluate(() => {
+            return [...document.querySelectorAll("img")].map((img) => ({
+                src: img.src || img.getAttribute("data-src") || null,
+            })).filter(img => img.src); // Remove null src values
+        });
 
-const scrapedHeadings = await page.evaluate(() => {
-    const headings = [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")];
-    if (headings.length === 0) {
-        return null; 
-    }
-    return headings.map((element) => ({
-        tag: element.tagName,
-        text: element.innerText.trim(),
-    }));
-});
+        await browser.close();
+        res.json({ success: true, method: "puppeteer", data: scrapedData });
 
-const scrapedImages = await page.evaluate(() => {
-    const images = [];
-    document.querySelectorAll("img").forEach((img) => {
-        const src = img.src;
-         if (src && /https:\/\/xcimg\.szwego\.com\/.*\.(jpg|jpeg|png|gif)\?.*/.test(src)) {
-                    images.push(src);
-                }
-    });
-    return images;
-});
-
-await browser.close();
-
-res.json({
-    success: true,
-    method: "puppeteer",
-    data: scrapedHeadings, 
-    images: scrapedImages,
-});
     } catch (error) {
         console.error("Scraping Error:", error);
         res.status(500).json({ success: false, message: "Scraping failed", error: error.message });
     }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
-});
+app.listen(3000, () => console.log("Server running on port 3000"));
