@@ -61,9 +61,9 @@ const scrapedImages = await page.evaluate(() => {
     const images = [];
     document.querySelectorAll("img").forEach((img) => {
         const src = img.src;
-         if (src && /https:\/\/xcimg\.szwego\.com\/.*\.(jpg|jpeg|png|gif)\?.*/.test(src)) {
-                    images.push(src);
-                }
+       if (src && /https:\/\/xcimg\.szwego\.com\/.*\.(jpg|jpeg|png|gif)\?/.test(src)) {
+    images.push(src);
+}
     });
     return images;
 });
