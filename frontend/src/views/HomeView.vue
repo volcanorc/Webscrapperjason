@@ -2,8 +2,9 @@
 import { ref } from "vue";
 import axios from "axios";
 
+// Define the type for the image data
 interface ScrapedData {
-  images: string[]; 
+  images: string[];  // Array of image URLs
 }
 
 const scrapedData = ref<ScrapedData>({ images: [] });
@@ -27,13 +28,15 @@ const fetchScrapedData = async () => {
       `https://webscrapper-1ab5.onrender.com/scrape?url=${encodeURIComponent(fullUrl)}`
     );
 
-    console.log(response.data); 
+    console.log(response.data); // Log the entire response to inspect it
 
-    if (response.data.success && response.data.data.length > 0) {
-      scrapedData.value = { images: response.data.data.map((item: { src: string }) => item.src) };
-      console.log("Scraped Image URLs:", scrapedData.value.images);
+    if (response.data.success) {
+      scrapedData.value = {
+        images: response.data.images || [],
+      };
+      console.log('Scraped Image URLs:', scrapedData.value.images); // Log image URLs
     } else {
-      error.value = "No images found. Please try another URL.";
+      error.value = "No data found. Please try another URL.";
     }
   } catch (err) {
     console.error("Error fetching data:", err);
@@ -48,7 +51,6 @@ const fetchScrapedData = async () => {
   <div class="container mx-auto p-6 text-center">
     <h1 class="text-4xl font-bold text-blue-700 mb-6">Scrape Website Images</h1>
     <p class="text-lg text-gray-600 mb-4">Enter the domain of a website to scrape its images.</p>
-    
     <div class="mb-6 flex justify-center items-center space-x-4">
       <input
         v-model="userUrl"
@@ -65,7 +67,6 @@ const fetchScrapedData = async () => {
         Scrape
       </button>
     </div>
-
     <div v-if="loading" class="text-lg text-black">Loading...</div>
     <div v-else-if="error" class="text-lg text-red-500 mb-4">
       <span>{{ error }}</span>
@@ -88,6 +89,7 @@ const fetchScrapedData = async () => {
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .container {
