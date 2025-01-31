@@ -56,7 +56,8 @@ app.get("/scrape", async (req, res) => {
             })).filter(img => img.src); // Remove null src values
         });
 
-        await browser.close();
+        //await browser.close();
+        await page.close();
         res.json({ success: true, method: "puppeteer", data: scrapedData });
 
     } catch (error) {
