@@ -2,17 +2,11 @@
 import { ref } from "vue";
 import axios from "axios";
 
-interface HeadingData {
-  tag: string;
-  text: string;
-}
-
 interface ScrapedData {
-  headings: HeadingData[];
-  images: string[];  // Array of image URLs (only src is provided)
+  images: string[]; 
 }
 
-const scrapedData = ref<ScrapedData>({ headings: [], images: [] });
+const scrapedData = ref<ScrapedData>({ images: [] });
 const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 const userUrl = ref<string>("");
@@ -25,7 +19,7 @@ const fetchScrapedData = async () => {
 
   loading.value = true;
   error.value = null;
-  scrapedData.value = { headings: [], images: [] }; // Reset scraped data
+  scrapedData.value = { images: [] }; // Reset scraped data
 
   try {
     const fullUrl = `https://${userUrl.value}`;
@@ -33,16 +27,13 @@ const fetchScrapedData = async () => {
       `https://webscrapper-1ab5.onrender.com/scrape?url=${encodeURIComponent(fullUrl)}`
     );
 
-    console.log(response.data); // Log the entire response to inspect it
+    console.log(response.data); 
 
-    if (response.data.success) {
-      scrapedData.value = {
-        headings: response.data.data || [],
-        images: response.data.images || [],
-      };
-      console.log('Scraped Image URLs:', scrapedData.value.images); // Log image URLs
+    if (response.data.success && response.data.data.length > 0) {
+      scrapedData.value = { images: response.data.data.map((item: { src: string }) => item.src) };
+      console.log("Scraped Image URLs:", scrapedData.value.images);
     } else {
-      error.value = "No data found. Please try another URL.";
+      error.value = "No images found. Please try another URL.";
     }
   } catch (err) {
     console.error("Error fetching data:", err);
@@ -55,8 +46,9 @@ const fetchScrapedData = async () => {
 
 <template>
   <div class="container mx-auto p-6 text-center">
-    <h1 class="text-4xl font-bold text-blue-700 mb-6">Scrape Website Headers and Images</h1>
-    <p class="text-lg text-gray-600 mb-4">Enter the domain of a website to scrape its header tags and images.</p>
+    <h1 class="text-4xl font-bold text-blue-700 mb-6">Scrape Website Images</h1>
+    <p class="text-lg text-gray-600 mb-4">Enter the domain of a website to scrape its images.</p>
+    
     <div class="mb-6 flex justify-center items-center space-x-4">
       <input
         v-model="userUrl"
@@ -73,27 +65,12 @@ const fetchScrapedData = async () => {
         Scrape
       </button>
     </div>
+
     <div v-if="loading" class="text-lg text-black">Loading...</div>
     <div v-else-if="error" class="text-lg text-red-500 mb-4">
       <span>{{ error }}</span>
     </div>
     <div v-else>
-      <!-- Display Headings -->
-      <div v-if="scrapedData.headings.length > 0" class="bg-white shadow-md rounded-lg p-4 mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">Headings</h2>
-        <ul class="space-y-4">
-          <li
-            v-for="(item, index) in scrapedData.headings"
-            :key="`heading-${index}`"
-            class="p-3 border-b last:border-none flex justify-between"
-          >
-            <span class="font-semibold text-gray-800">{{ item.tag }}</span>
-            <span class="ml-4 text-gray-600">{{ item.text }}</span>
-          </li>
-        </ul>
-      </div>
-      <p v-else class="text-gray-500 mb-6">No headings found.</p>
-
       <!-- Display Images -->
       <div v-if="scrapedData.images.length > 0" class="bg-white shadow-md rounded-lg p-4">
         <h2 class="text-2xl font-bold text-gray-800 mb-4">Images</h2>
@@ -132,4 +109,3 @@ img {
   height: auto;
 }
 </style>
-
