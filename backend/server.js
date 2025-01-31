@@ -70,9 +70,9 @@ const scrapedImages = await page.evaluate(() => {
     const images = [];
     document.querySelectorAll("img").forEach((img) => {
         const src = img.src;
-        if (src) {
-            images.push(src);
-        }
+        if (src && src.includes("https://xcimg.szwego.com/") && src.includes("?imageMogr2/auto-orient/thumbnail")) {
+                    images.push(src);
+                }
     });
     return images;
 });
