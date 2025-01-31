@@ -37,31 +37,34 @@ app.get("/scrape", async (req, res) => {
         }
 
         const browser = await puppeteer.launch({
-            headless: "new",
-            args: [
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-accelerated-2d-canvas",
-                "--disable-gpu"
-            ],
-        });
-
-        const page = await browser.newPage();
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
-
-    const scrapedData = await page.evaluate(() => {
-    return [...document.querySelectorAll("img")]
-        .map(img => ({
-            src: img.src || img.getAttribute("data-src") || null
-        }))
-        .filter(img => img.src !== null); 
+    headless: "new",
+    args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu"
+    ],
 });
 
+const page = await browser.newPage();
+await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
 
-        //await browser.close();
-        await page.close();
-        res.json({ success: true, method: "puppeteer", data: scrapedData });
+const scrapedData = await page.evaluate(() => {
+    const images = [];
+    document.querySelectorAll("img").forEach((img) => {
+        const src = img.src || img.getAttribute("data-src");
+        // Use the regex to filter images with the specified source pattern
+        if (src && /https:\/\/xcimg\.szwego\.com\/.*\.(jpg|jpeg|png|gif)\?.*/.test(src)) {
+            images.push(src);
+        }
+    });
+    return images;
+});
+
+//await browser.close();
+await page.close();
+res.json({ success: true, method: "puppeteer", data: scrapedData });
 
     } catch (error) {
         console.error("Scraping Error:", error);
