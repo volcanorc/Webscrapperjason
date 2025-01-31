@@ -43,7 +43,7 @@ app.get("/scrape", async (req, res) => {
 
       
      const browser = await puppeteer.launch({
-            headless: "new", // Use the new headless mode
+            headless: "new",
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
 
@@ -51,15 +51,13 @@ app.get("/scrape", async (req, res) => {
 await page.goto(url, { waitUntil: "load", timeout: 60000 });
 
 await page.waitForSelector("h1, h2, h3, h4, h5, h6", { timeout: 10000 }).catch(() => {
-    // If no headings are found within the timeout, we just move forward with images
     console.log("No headings found, proceeding to scrape images.");
 });
 
-// Scrape headings
 const scrapedHeadings = await page.evaluate(() => {
     const headings = [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")];
     if (headings.length === 0) {
-        return null; // If no headings are found, return null
+        return null; 
     }
     return headings.map((element) => ({
         tag: element.tagName,
@@ -67,7 +65,6 @@ const scrapedHeadings = await page.evaluate(() => {
     }));
 });
 
-// Scrape images
 const scrapedImages = await page.evaluate(() => {
     const images = [];
     document.querySelectorAll("img").forEach((img) => {
@@ -81,11 +78,10 @@ const scrapedImages = await page.evaluate(() => {
 
 await browser.close();
 
-// Send response with headings and images
 res.json({
     success: true,
     method: "puppeteer",
-    data: scrapedHeadings, // If no headings are found, it will be null
+    data: scrapedHeadings, 
     images: scrapedImages,
 });
     } catch (error) {
