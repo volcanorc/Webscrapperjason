@@ -14,6 +14,8 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"], 
 }));
 
+//const imageUrlPattern = /^https:\/\/xcimg\.szwego\.com\/.*\.(jpg|jpeg|png|gif)\?.*/;
+
 app.get("/scrape", async (req, res) => {
     try {
         const url = req.query.url;
@@ -70,7 +72,7 @@ const scrapedImages = await page.evaluate(() => {
     const images = [];
     document.querySelectorAll("img").forEach((img) => {
         const src = img.src;
-        if (src && src.includes("https://xcimg.szwego.com/")) {
+         if (src && /https:\/\/xcimg\.szwego\.com\/.*\.(jpg|jpeg|png|gif)\?.*/.test(src)) {
                     images.push(src);
                 }
     });
