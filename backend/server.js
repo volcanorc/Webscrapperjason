@@ -2,10 +2,9 @@ const express = require("express");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const puppeteer = require("puppeteer");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const cors = require("cors");
 const app = express();
-puppeteer.use(StealthPlugin());
+
 app.use(cors({
     origin: "*", 
     methods: ["GET", "POST"],
