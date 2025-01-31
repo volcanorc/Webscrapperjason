@@ -50,11 +50,14 @@ app.get("/scrape", async (req, res) => {
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
 
-        const scrapedData = await page.evaluate(() => {
-            return [...document.querySelectorAll("img")].map((img) => ({
-                src: img.src || img.getAttribute("data-src") || null,
-            })).filter(img => img.src); // Remove null src values
-        });
+    const scrapedData = await page.evaluate(() => {
+    return [...document.querySelectorAll("img")]
+        .map(img => ({
+            src: img.src || img.getAttribute("data-src") || null
+        }))
+        .filter(img => img.src !== null); 
+});
+
 
         //await browser.close();
         await page.close();
