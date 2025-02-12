@@ -17,6 +17,9 @@ app.use(
 const imageUrlPattern =
   /^https:\/\/xcimg\.szwego\.com\/\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg\?imageMogr2\/.*$/;
 
+// Alternative wait function in case Puppeteer version is old
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 app.get("/scrape", async (req, res) => {
   try {
     const url = req.query.url;
@@ -62,8 +65,11 @@ app.get("/scrape", async (req, res) => {
       await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
       });
-      await page.waitForTimeout(200000);  
-    }
+
+      
+      await wait(200000);  // Use the custom wait function
+
+      
 
     console.log("Scraping images...");
     const scrapedImages = await page.evaluate((pattern) => {
