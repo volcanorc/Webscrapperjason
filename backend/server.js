@@ -14,9 +14,6 @@ app.use(
   })
 );
 
-/*const imageUrlPattern =
-  /^https:\/\/xcimg\.szwego\.com\/\d{8}\/a\d+_\d+\.jpg\?imageMogr2\/.*$/; 
-  */
 const imageUrlPattern =
   /^https:\/\/xcimg\.szwego\.com\/\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg\?imageMogr2\/.*$/;
 
@@ -30,7 +27,6 @@ app.get("/scrape", async (req, res) => {
       });
     }
 
-    // Use Puppeteer directly
     const browser = await puppeteer.launch({
       headless: "new",
       args: [
@@ -40,11 +36,28 @@ app.get("/scrape", async (req, res) => {
         "--disable-accelerated-2d-canvas",
         "--disable-gpu",
       ],
-          timeout: 1000000,
+      timeout: 1000000,
     });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "load", timeout: 60000 });
+    await page.goto(url, { waitUntil: "load", timeout: 1000000 });
+
+    let previousHeight;
+    while (true) {
+      const scrollHeight = await page.evaluate(() => {
+        return document.body.scrollHeight;
+      });
+
+      if (previousHeight === scrollHeight) {
+        break;
+      }
+
+      previousHeight = scrollHeight;
+      await page.evaluate(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+      await page.waitForTimeout(200000); 
+    }
 
     const scrapedImages = await page.evaluate((pattern) => {
       const images = [];
@@ -56,7 +69,6 @@ app.get("/scrape", async (req, res) => {
       });
       return images;
     }, imageUrlPattern.source);
-
 
     await page.close();
     res.json({ success: true, method: "puppeteer", images: scrapedImages });
@@ -73,3 +85,4 @@ app.get("/scrape", async (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
+
