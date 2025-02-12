@@ -66,8 +66,10 @@ app.get("/scrape", async (req, res) => {
         window.scrollTo(0, document.body.scrollHeight);
       });
 
+      
       await wait(200000);  // Use the custom wait function
-    }
+
+      
 
     console.log("Scraping images...");
     const scrapedImages = await page.evaluate((pattern) => {
