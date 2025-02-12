@@ -27,6 +27,8 @@ app.get("/scrape", async (req, res) => {
       });
     }
 
+    console.log(`Scraping started for URL: ${url}`);
+
     const browser = await puppeteer.launch({
       headless: "new",
       args: [
@@ -40,25 +42,30 @@ app.get("/scrape", async (req, res) => {
     });
 
     const page = await browser.newPage();
+    console.log("Navigating to the page...");
     await page.goto(url, { waitUntil: "load", timeout: 1000000 });
 
     let previousHeight;
+    console.log("Starting scroll loop...");
     while (true) {
       const scrollHeight = await page.evaluate(() => {
         return document.body.scrollHeight;
       });
 
       if (previousHeight === scrollHeight) {
+        console.log("End of page reached, stopping scroll.");
         break;
       }
 
       previousHeight = scrollHeight;
+      console.log("Scrolling down the page...");
       await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
       });
-      await page.waitForTimeout(200000); 
+      await page.waitForTimeout(200000);  
     }
 
+    console.log("Scraping images...");
     const scrapedImages = await page.evaluate((pattern) => {
       const images = [];
       document.querySelectorAll("img").forEach((img) => {
@@ -70,8 +77,11 @@ app.get("/scrape", async (req, res) => {
       return images;
     }, imageUrlPattern.source);
 
+    console.log(`Found ${scrapedImages.length} images.`);
+
     await page.close();
     res.json({ success: true, method: "puppeteer", images: scrapedImages });
+    console.log("Scraping completed successfully.");
   } catch (error) {
     console.error("Scraping Error:", error);
     res.status(500).json({
@@ -85,4 +95,3 @@ app.get("/scrape", async (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
-
