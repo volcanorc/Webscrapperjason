@@ -45,7 +45,7 @@ app.get("/scrape", async (req, res) => {
 
     const page = await browser.newPage();
     console.log("Navigating to the page...");
-    await page.goto(url, { waitUntil: "load", timeout: 10000 });
+    await page.goto(url, { waitUntil: "load", timeout: 1000000 });
 
     let previousHeight;
     console.log("Starting scroll loop...");
@@ -65,7 +65,7 @@ app.get("/scrape", async (req, res) => {
         window.scrollTo(0, document.body.scrollHeight);
       });
 
-      await wait(2000);  
+      await wait(200000);  // Use the custom wait function
     }
 
     console.log("Scraping images...");
