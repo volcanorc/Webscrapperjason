@@ -57,6 +57,7 @@ app.get("/scrape", async (req, res) => {
       return images;
     }, imageUrlPattern.source);
 
+
     await page.close();
     res.json({ success: true, method: "puppeteer", images: scrapedImages });
   } catch (error) {
