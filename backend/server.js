@@ -40,6 +40,7 @@ app.get("/scrape", async (req, res) => {
         "--disable-accelerated-2d-canvas",
         "--disable-gpu",
       ],
+          timeout: 1000000,
     });
 
     const page = await browser.newPage();
