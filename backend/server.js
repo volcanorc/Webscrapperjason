@@ -6,6 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 puppeteer.use(StealthPlugin());
+
 app.use(
   cors({
     origin: "*",
@@ -17,16 +18,11 @@ app.use(
 const imageUrlPattern =
   /^https:\/\/xcimg\.szwego\.com\/\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg\?imageMogr2\/.*$/;
 
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
 app.get("/scrape", async (req, res) => {
   try {
     const url = req.query.url;
     if (!url) {
-      return res.status(400).json({
-        success: false,
-        message: "URL is required",
-      });
+      return res.status(400).json({ success: false, message: "URL is required" });
     }
 
     console.log(`Scraping started for URL: ${url}`);
@@ -40,61 +36,38 @@ app.get("/scrape", async (req, res) => {
         "--disable-accelerated-2d-canvas",
         "--disable-gpu",
       ],
-      timeout: 1000000,
+      timeout: 60000, // Reduce timeout to 60 seconds
     });
 
     const page = await browser.newPage();
     console.log("Navigating to the page...");
-    await page.goto(url, { waitUntil: "load", timeout: 1000000 });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
 
-    let previousHeight;
-    console.log("Starting scroll loop...");
-    while (true) {
-      const scrollHeight = await page.evaluate(() => {
-        return document.body.scrollHeight;
-      });
-
-      if (previousHeight === scrollHeight) {
-        console.log("End of page reached, stopping scroll.");
-        break;
-      }
-
-      previousHeight = scrollHeight;
-      console.log("Scrolling down the page...");
-      await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight);
-      });
-
-      await wait(200000);  // Use the custom wait function
+    console.log("Scrolling to load images...");
+    for (let i = 0; i < 5; i++) { // Limit scrolling attempts
+      await page.evaluate(() => window.scrollBy(0, window.innerHeight));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Shorter wait time
     }
 
     console.log("Scraping images...");
     const scrapedImages = await page.evaluate((pattern) => {
-      const images = [];
-      document.querySelectorAll("img").forEach((img) => {
-        const src = img.src;
-        if (src && new RegExp(pattern).test(src)) {
-          images.push(src);
-        }
-      });
-      return images;
+      return [...document.querySelectorAll("img")]
+        .map(img => img.src)
+        .filter(src => new RegExp(pattern).test(src));
     }, imageUrlPattern.source);
 
     console.log(`Found ${scrapedImages.length} images.`);
 
-    await page.close();
+    await browser.close();
     res.json({ success: true, method: "puppeteer", images: scrapedImages });
     console.log("Scraping completed successfully.");
   } catch (error) {
     console.error("Scraping Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Scraping failed",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Scraping failed", error: error.message });
   }
 });
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
+ 
