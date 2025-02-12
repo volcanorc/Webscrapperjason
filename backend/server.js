@@ -6,6 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 puppeteer.use(StealthPlugin());
+
 app.use(
   cors({
     origin: "*",
@@ -17,43 +18,51 @@ app.use(
 const imageUrlPattern =
   /^https:\/\/xcimg\.szwego\.com\/\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg\?imageMogr2\/.*$/;
 
-// Alternative wait function in case Puppeteer version is old
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const MAX_TABS = 5;
+const WAIT_TIME = 200000;
+const browserQueue = [];
 
-app.get("/scrape", async (req, res) => {
+let browser;
+(async () => {
+  browser = await puppeteer.launch({
+    headless: "new",
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-accelerated-2d-canvas",
+      "--disable-gpu",
+    ],
+    timeout: 100000,
+  });
+})();
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const scrapeImages = async (url) => {
+  let page;
   try {
-    const url = req.query.url;
     if (!url) {
-      return res.status(400).json({
-        success: false,
-        message: "URL is required",
-      });
+      throw new Error("URL is required");
     }
 
     console.log(`Scraping started for URL: ${url}`);
 
-    const browser = await puppeteer.launch({
-      headless: "new",
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-accelerated-2d-canvas",
-        "--disable-gpu",
-      ],
-      timeout: 1000000,
-    });
+    while (browserQueue.length >= MAX_TABS) {
+      console.log("Max tabs reached. Waiting for an available slot...");
+      await wait(100000);
+    }
 
-    const page = await browser.newPage();
-    console.log("Navigating to the page...");
-    await page.goto(url, { waitUntil: "load", timeout: 1000000 });
+    page = await browser.newPage();
+    browserQueue.push(page);
+    console.log(`Navigating to: ${url}`);
+
+    await page.goto(url, { waitUntil: "load", timeout: 100000 });
 
     let previousHeight;
     console.log("Starting scroll loop...");
     while (true) {
-      const scrollHeight = await page.evaluate(() => {
-        return document.body.scrollHeight;
-      });
+      const scrollHeight = await page.evaluate(() => document.body.scrollHeight);
 
       if (previousHeight === scrollHeight) {
         console.log("End of page reached, stopping scroll.");
@@ -61,15 +70,11 @@ app.get("/scrape", async (req, res) => {
       }
 
       previousHeight = scrollHeight;
-      console.log("Scrolling down the page...");
-      await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight);
-      });
+      console.log("Scrolling down...");
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
-      
-      await wait(200000);  // Use the custom wait function
-
-      
+      await wait(WAIT_TIME);
+    }
 
     console.log("Scraping images...");
     const scrapedImages = await page.evaluate((pattern) => {
@@ -85,19 +90,31 @@ app.get("/scrape", async (req, res) => {
 
     console.log(`Found ${scrapedImages.length} images.`);
 
-    await page.close();
-    res.json({ success: true, method: "puppeteer", images: scrapedImages });
-    console.log("Scraping completed successfully.");
+    return { success: true, images: scrapedImages };
   } catch (error) {
     console.error("Scraping Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Scraping failed",
-      error: error.message,
-    });
+    return { success: false, message: "Scraping failed", error: error.message };
+  } finally {
+    if (page) {
+      await page.close();
+      browserQueue.splice(browserQueue.indexOf(page), 1); 
+    }
   }
+};
+
+app.get("/scrape", async (req, res) => {
+  const url = req.query.url;
+  const result = await scrapeImages(url);
+  res.json(result);
+});
+
+process.on("SIGINT", async () => {
+  console.log("Closing browser...");
+  if (browser) await browser.close();
+  process.exit();
 });
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
+
