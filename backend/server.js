@@ -14,8 +14,11 @@ app.use(
   })
 );
 
+/*const imageUrlPattern =
+  /^https:\/\/xcimg\.szwego\.com\/\d{8}\/a\d+_\d+\.jpg\?imageMogr2\/.*$/; 
+  */
 const imageUrlPattern =
-  /^https:\/\/xcimg\.szwego\.com\/\d{8}\/a\d+_\d+\.jpg\?imageMogr2\/.*$/;
+  /^https:\/\/xcimg\.szwego\.com\/\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg\?imageMogr2\/.*$/;
 
 app.get("/scrape", async (req, res) => {
   try {
