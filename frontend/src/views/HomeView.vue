@@ -60,7 +60,7 @@ const fetchScrapedData = async () => {
   try {
     const fullUrl = `https://${userUrl.value}`;
     const response = await axios.post(
-      `http://localhost:5000/scrape`, // Your API endpoint
+      `https://excelautomation-xy7r.onrender.com/scrape`, // Your API endpoint
       { url: fullUrl }
     );
 
