@@ -1,56 +1,7 @@
-<script setup lang="ts">
-import { ref } from "vue";
-import axios from "axios";
-
-// Define the type for the image data
-interface ScrapedData {
-  images: string[];  // Array of image URLs
-}
-
-const scrapedData = ref<ScrapedData>({ images: [] });
-const loading = ref<boolean>(false);
-const error = ref<string | null>(null);
-const userUrl = ref<string>("");
-
-const fetchScrapedData = async () => {
-  if (!userUrl.value) {
-    error.value = "Please provide a domain (e.g., example.com) to scrape.";
-    return;
-  }
-
-  loading.value = true;
-  error.value = null;
-  scrapedData.value = { images: [] }; // Reset scraped data
-
-  try {
-    const fullUrl = `https://${userUrl.value}`;
-    const response = await axios.get(
-      `https://webscrapper-1ab5.onrender.com/scrape?url=${encodeURIComponent(fullUrl)}`
-    );
-
-    console.log(response.data); // Log the entire response to inspect it
-
-    if (response.data.success) {
-      scrapedData.value = {
-        images: response.data.images || [],
-      };
-      console.log('Scraped Image URLs:', scrapedData.value.images); // Log image URLs
-    } else {
-      error.value = "No data found. Please try another URL.";
-    }
-  } catch (err) {
-    console.error("Error fetching data:", err);
-    error.value = "Failed to load scraped data.";
-  } finally {
-    loading.value = false;
-  }
-};
-</script>
-
 <template>
   <div class="container mx-auto p-6 text-center">
-    <h1 class="text-4xl font-bold text-blue-700 mb-6">Scrape Website Images</h1>
-    <p class="text-lg text-gray-600 mb-4">Enter the domain of a website to scrape its images.</p>
+    <h1 class="text-4xl font-bold text-blue-700 mb-6">Scrape Website Text</h1>
+    <p class="text-lg text-gray-600 mb-4">Enter the domain of a website to scrape its content.</p>
     <div class="mb-6 flex justify-center items-center space-x-4">
       <input
         v-model="userUrl"
@@ -72,24 +23,65 @@ const fetchScrapedData = async () => {
       <span>{{ error }}</span>
     </div>
     <div v-else>
-      <!-- Display Images -->
-      <div v-if="scrapedData.images.length > 0" class="bg-white shadow-md rounded-lg p-4">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">Images</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div
-            v-for="(src, index) in scrapedData.images"
-            :key="`image-${index}`"
-            class="border rounded-lg overflow-hidden"
-          >
-            <img :src="src" :alt="'Image ' + index" class="w-full h-auto" />
-          </div>
-        </div>
+      <!-- Display Scraped Text -->
+      <div v-if="scrapedData.allText" class="bg-white shadow-md rounded-lg p-4">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Scraped Content</h2>
+        <pre class="whitespace-pre-wrap text-left text-gray-800">{{ scrapedData.allText }}</pre>
       </div>
-      <p v-else class="text-gray-500">No images found.</p>
+      <p v-else class="text-gray-500">No text content found.</p>
     </div>
   </div>
 </template>
 
+<script setup lang="ts">
+import { ref } from "vue";
+import axios from "axios";
+
+// Define the type for the scraped data
+interface ScrapedData {
+  allText: string;  // The entire text scraped from the page
+}
+
+const scrapedData = ref<ScrapedData>({ allText: "" });
+const loading = ref<boolean>(false);
+const error = ref<string | null>(null);
+const userUrl = ref<string>("");
+
+const fetchScrapedData = async () => {
+  if (!userUrl.value) {
+    error.value = "Please provide a domain (e.g., example.com) to scrape.";
+    return;
+  }
+
+  loading.value = true;
+  error.value = null;
+  scrapedData.value = { allText: "" }; // Reset scraped data
+
+  try {
+    const fullUrl = `https://${userUrl.value}`;
+    const response = await axios.post(
+      `http://localhost:5000/scrape`, // Your API endpoint
+      { url: fullUrl }
+    );
+
+    console.log(response.data); // Log the entire response to inspect it
+
+    if (response.data.allText) {
+      scrapedData.value = {
+        allText: response.data.allText || "",
+      };
+      console.log('Scraped Text:', scrapedData.value.allText); // Log all text content
+    } else {
+      error.value = "No data found. Please try another URL.";
+    }
+  } catch (err) {
+    console.error("Error fetching data:", err);
+    error.value = "Failed to load scraped data.";
+  } finally {
+    loading.value = false;
+  }
+};
+</script>
 
 <style scoped>
 .container {
@@ -104,6 +96,12 @@ button {
 
 input {
   max-width: 400px;
+}
+
+pre {
+  white-space: pre-wrap; /* Wrap text content */
+  word-wrap: break-word; /* Prevent overflow */
+  font-family: 'Courier New', monospace;
 }
 
 img {
