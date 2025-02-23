@@ -103,8 +103,7 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
 */
-
- const express = require("express");
+const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 
@@ -121,9 +120,6 @@ app.use(
   })
 );
 
-const imageUrlPattern =
-  /^https:\/\/xcimg\.szwego\.com\/\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg/;
-
 app.get("/scrape", async (req, res) => {
   try {
     const url = req.query.url;
@@ -136,12 +132,17 @@ app.get("/scrape", async (req, res) => {
 
     console.log(`Scraping started for URL: ${url}`);
 
-    // Call ScrapingBee API
+    // Call ScrapingBee API with full page rendering
     const response = await axios.get("https://app.scrapingbee.com/api/v1/", {
       params: {
         api_key: SCRAPINGBEE_API_KEY,
         url: url,
-        render_js: "true", // Enable JavaScript rendering
+        render_js: "true", // Enable JavaScript execution
+        wait_browser: "5000", // Wait 3 seconds for JS to load
+        block_resources: "false", // Ensure images are not blocked
+        js_scenario: JSON.stringify([
+          { action: "scroll", wait: 2000 }, // Scroll down and wait
+        ]),
       },
     });
 
@@ -155,13 +156,17 @@ app.get("/scrape", async (req, res) => {
 
     imgTags.forEach((tag) => {
       const match = tag.match(/src=["'](.*?)["']/);
-      if (match && imageUrlPattern.test(match[1])) {
-        scrapedImages.push(match[1]);
+      if (match) {
+        let imgSrc = match[1];
+
+        // Remove query params from URL for better detection
+        imgSrc = imgSrc.split("?")[0];
+
+        scrapedImages.push(imgSrc);
       }
     });
 
     console.log(`Found ${scrapedImages.length} images.`);
-
     res.json({ success: true, method: "scrapingbee", images: scrapedImages });
   } catch (error) {
     console.error("Scraping Error:", error);
