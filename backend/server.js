@@ -122,7 +122,7 @@ app.use(
 
 app.get("/scrape", async (req, res) => {
   try {
-    const url = req.query.url;
+    let url = req.query.url;
     if (!url) {
       return res.status(400).json({
         success: false,
