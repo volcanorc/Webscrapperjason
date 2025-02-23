@@ -131,17 +131,17 @@ app.get("/scrape", async (req, res) => {
     }
 
     console.log(`Scraping started for URL: ${url}`);
-
-    // Call ScrapingBee API with full page rendering
+      url = encodeURI(url.split("#")[0]); 
+    console.log(`Encoded URL: ${url}`);
     const response = await axios.get("https://app.scrapingbee.com/api/v1/", {
       params: {
         api_key: SCRAPINGBEE_API_KEY,
         url: url,
-        render_js: "true", // Enable JavaScript execution
-        wait_browser: "5000", // Wait 3 seconds for JS to load
-        block_resources: "false", // Ensure images are not blocked
+        render_js: "true",
+        wait_browser: "5000",
+        block_resources: "false",
         js_scenario: JSON.stringify([
-          { action: "scroll", wait: 2000 }, // Scroll down and wait
+          { action: "scroll", wait: 2000 },
         ]),
       },
     });
