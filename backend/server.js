@@ -111,7 +111,7 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SCRAPINGBEE_API_KEY = "your_scrapingbee_api_key";
+const SCRAPINGBEE_API_KEY = "KFJ2PKFKG809AU4MISH6QYXR45NLYDWQWVKAPXHD98NPPS4XE8EOK9C27XYMCRTZE7C0FW1JR9JGRI27";
 
 app.use(
   cors({
