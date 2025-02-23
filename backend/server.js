@@ -103,15 +103,15 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
 */
-const express = require("express");
+
+ const express = require("express");
 const axios = require("axios");
-const cheerio = require("cheerio");
 const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const API_KEY = "KFJ2PKFKG809AU4MISH6QYXR45NLYDWQWVKAPXHD98NPPS4XE8EOK9C27XYMCRTZE7C0FW1JR9JGRI27"; 
+const SCRAPINGBEE_API_KEY = "your_scrapingbee_api_key";
 
 app.use(
   cors({
@@ -122,7 +122,7 @@ app.use(
 );
 
 const imageUrlPattern =
-  /^https:\/\/xcimg\.szwego\.com\/\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg\?imageMogr2\/.*$/;
+  /^https:\/\/xcimg\.szwego\.com\/\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg/;
 
 app.get("/scrape", async (req, res) => {
   try {
@@ -136,34 +136,32 @@ app.get("/scrape", async (req, res) => {
 
     console.log(`Scraping started for URL: ${url}`);
 
+    // Call ScrapingBee API
     const response = await axios.get("https://app.scrapingbee.com/api/v1/", {
       params: {
-        api_key: API_KEY,
+        api_key: SCRAPINGBEE_API_KEY,
         url: url,
-        render_js: "true", 
-        wait: 5000, 
+        render_js: "true", // Enable JavaScript rendering
       },
     });
 
-    if (response.status !== 200) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch page content",
-      });
+    if (!response.data) {
+      throw new Error("Failed to fetch page content.");
     }
 
-    console.log("Parsing images...");
-    const $ = cheerio.load(response.data);
+    console.log("Extracting images...");
     const scrapedImages = [];
+    const imgTags = response.data.match(/<img[^>]+src=["'](.*?)["']/g) || [];
 
-    $("img").each((_, img) => {
-      const imgUrl = $(img).attr("src");
-      if (imgUrl && imageUrlPattern.test(imgUrl)) {
-        scrapedImages.push(imgUrl);
+    imgTags.forEach((tag) => {
+      const match = tag.match(/src=["'](.*?)["']/);
+      if (match && imageUrlPattern.test(match[1])) {
+        scrapedImages.push(match[1]);
       }
     });
 
     console.log(`Found ${scrapedImages.length} images.`);
+
     res.json({ success: true, method: "scrapingbee", images: scrapedImages });
   } catch (error) {
     console.error("Scraping Error:", error);
@@ -173,6 +171,10 @@ app.get("/scrape", async (req, res) => {
       error: error.message,
     });
   }
+});
+
+app.get("/api/health", (req, res) => {
+  res.status(200).send("OK");
 });
 
 app.listen(PORT, "0.0.0.0", () => {
