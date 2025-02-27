@@ -45,8 +45,9 @@ app.get("/scrape", async (req, res) => {
 
  const page = await browser.newPage();
 console.log("Navigating to the page...");
-await page.goto(url, { waitUntil: "load", timeout: 60000 });
-
+//await page.goto(url, { waitUntil: "load", timeout: 60000 });
+await page.goto(url, { waitUntil: "networkidle2", timeout: 90000 });
+    
 let previousHeight = 0;
 console.log("Starting scroll loop...");
 while (true) {
