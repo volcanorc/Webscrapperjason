@@ -40,33 +40,33 @@ app.get("/scrape", async (req, res) => {
         "--disable-accelerated-2d-canvas",
         "--disable-gpu",
       ],
-      timeout: 1000000,
+      timeout: 600000,
     });
 
-    const page = await browser.newPage();
-    console.log("Navigating to the page...");
-    await page.goto(url, { waitUntil: "load", timeout: 1000000 });
+ const page = await browser.newPage();
+console.log("Navigating to the page...");
+await page.goto(url, { waitUntil: "load", timeout: 60000 });
 
-    let previousHeight;
-    console.log("Starting scroll loop...");
-    while (true) {
-      const scrollHeight = await page.evaluate(() => {
-        return document.body.scrollHeight;
-      });
+let previousHeight = 0;
+console.log("Starting scroll loop...");
+while (true) {
+  const scrollHeight = await page.evaluate(() => document.body.scrollHeight);
 
-      if (previousHeight === scrollHeight) {
-        console.log("End of page reached, stopping scroll.");
-        break;
-      }
+  if (previousHeight === scrollHeight) {
+    console.log("End of page reached, stopping scroll.");
+    break;
+  }
 
-      previousHeight = scrollHeight;
-      console.log("Scrolling down the page...");
-      await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight);
-      });
+  previousHeight = scrollHeight;
+  console.log("Scrolling down the page...");
+  
+  await page.evaluate(() => {
+    window.scrollTo(0, document.body.scrollHeight);
+  });
 
-      await wait(200000);  // Use the custom wait function
-    }
+  await wait(3000); 
+}
+
 
     console.log("Scraping images...");
     const scrapedImages = await page.evaluate((pattern) => {
