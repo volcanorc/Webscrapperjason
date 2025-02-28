@@ -25,7 +25,7 @@ const fetchScrapedData = async () => {
   try {
     const fullUrl = `https://${userUrl.value}`;
     const response = await axios.get(
-      `https://webscrapper-1ab5.onrender.com/scrape?url=${encodeURIComponent(fullUrl)}`
+      `https://cuddly-goggles-xjp4x5rp44w2pqvv-3000.app.github.dev/scrape?url=${encodeURIComponent(fullUrl)}`
     );
 
     console.log(response.data); // Log the entire response to inspect it
