@@ -15,7 +15,7 @@ app.use(
 );
 
 const imageUrlPattern =
-  /^https:\/\/xcimg\.szwego\.com\/\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg/;
+  /^https:\/\/xcimg\.szwego\.com\/(?:img\/[a-zA-Z0-9]+\/)?\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg(?:\?.*)?$/;
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
