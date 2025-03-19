@@ -16,9 +16,8 @@ app.use(
 );
 
 const imageUrlPattern =
-  /^https:\/\/xcimg\.szwego\.com\/\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg\?imageMogr2\/.*$/;
+  /^https:\/\/xcimg\.szwego\.com\/(?:img\/[a-zA-Z0-9]+\/)?\d{8}\/([ai])\d+_\d+(?:_\d+)?\.jpg(?:\?.*)?$/;
 
-// Alternative wait function in case Puppeteer version is old
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 app.get("/scrape", async (req, res) => {
@@ -42,35 +41,34 @@ app.get("/scrape", async (req, res) => {
         "--disable-accelerated-2d-canvas",
         "--disable-gpu",
       ],
-      timeout: 1000000,
+      timeout: 600000,
     });
 
-    const page = await browser.newPage();
-    console.log("Navigating to the page...");
-    await page.goto(url, { waitUntil: "load", timeout: 1000000 });
+ const page = await browser.newPage();
+console.log("Navigating to the page...");
+//await page.goto(url, { waitUntil: "load", timeout: 60000 });
+await page.goto(url, { waitUntil: "networkidle2", timeout: 90000 });
+    
+let previousHeight = 0;
+console.log("Starting scroll loop...");
+while (true) {
+  const scrollHeight = await page.evaluate(() => document.body.scrollHeight);
 
-    let previousHeight;
-    console.log("Starting scroll loop...");
-    while (true) {
-      const scrollHeight = await page.evaluate(() => {
-        return document.body.scrollHeight;
-      });
+  if (previousHeight === scrollHeight) {
+    console.log("End of page reached, stopping scroll.");
+    break;
+  }
 
-      if (previousHeight === scrollHeight) {
-        console.log("End of page reached, stopping scroll.");
-        break;
-      }
+  previousHeight = scrollHeight;
+  console.log("Scrolling down the page...");
+  
+  await page.evaluate(() => {
+    window.scrollTo(0, document.body.scrollHeight);
+  });
 
-      previousHeight = scrollHeight;
-      console.log("Scrolling down the page...");
-      await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight);
-      });
+  await wait(3000); 
+}
 
-      
-      await wait(200000);  // Use the custom wait function
-
-      
 
     console.log("Scraping images...");
     const scrapedImages = await page.evaluate((pattern) => {
@@ -98,6 +96,11 @@ app.get("/scrape", async (req, res) => {
     });
   }
 });
+
+app.get('/api/health', (req, res) => {
+  res.status(200).send("OK");
+});
+
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
