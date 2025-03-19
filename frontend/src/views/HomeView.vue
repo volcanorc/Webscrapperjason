@@ -59,9 +59,10 @@ const fetchScrapedData = async () => {
 
   try {
     const fullUrl = `https://${userUrl.value}`;
-    const response = await axios.post(
-      `https://excelautomation-xy7r.onrender.com/scrape`, // Your API endpoint
-      { url: fullUrl }
+
+    const response = await axios.get(
+      `https://cuddly-goggles-xjp4x5rp44w2pqvv-3000.app.github.dev/scrape?url=${encodeURIComponent(fullUrl)}`
+
     );
 
     console.log(response.data); // Log the entire response to inspect it
